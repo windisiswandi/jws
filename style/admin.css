@@ -1,0 +1,15 @@
+.settings-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1000;
+}
+.settings-btn:hover {
+    background-color: #0056b3;
+}

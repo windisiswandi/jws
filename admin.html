@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Jadwal Sholat Masjid</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-back {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="btn-back">🔙 Kembali ke Jadwal</a>
+
+    <div class="container">
+        <h2 class="text-center">Admin Panel - Jadwal Sholat Masjid</h2>
+
+        <!-- Atur Nama Masjid -->
+        <div class="mb-4">
+            <h4>Atur Nama Masjid</h4>
+            <input type="text" id="nama-masjid" class="form-control" placeholder="Masukkan nama masjid...">
+            <button class="btn btn-primary mt-2" onclick="saveNamaMasjid()">Simpan Nama Masjid</button>
+        </div>
+
+        <!-- Atur Lokasi Masjid -->
+        <div class="mb-4">
+            <h4>Atur Lokasi Masjid</h4>
+            <button class="btn btn-primary mb-2" onclick="setLocationWithGPS()">📍 Gunakan Lokasi GPS</button>
+            <input type="text" id="manual-lokasi" class="form-control mt-2" placeholder="Atau masukkan nama lokasi secara manual">
+            <button class="btn btn-success mt-2" onclick="saveManualLocation()">Simpan Lokasi Manual</button>
+            <p id="location-status">Status Lokasi: Belum diatur</p>
+        </div>
+
+        <!-- Teks Berjalan -->
+        <div class="mb-4">
+            <h4>Atur Teks Berjalan</h4>
+            <textarea id="teks-berjalan" class="form-control" rows="3" placeholder="Masukkan teks berjalan..."></textarea>
+            <button class="btn btn-primary mt-2" onclick="saveTeksBerjalan()">Simpan Teks</button>
+        </div>
+
+        <!-- Informasi Kas -->
+        <div class="mb-4">
+            <h4>Informasi Kas Masjid</h4>
+            <input type="number" id="kas-awal" class="form-control" placeholder="Kas Awal">
+            <input type="number" id="kas-masuk" class="form-control mt-2" placeholder="Kas Masuk">
+            <input type="number" id="kas-keluar" class="form-control mt-2" placeholder="Kas Keluar">
+            <button class="btn btn-success mt-2" onclick="saveKasMasjid()">Simpan Kas</button>
+        </div>
+
+        <!-- Upload Audio Tahrim -->
+        <div class="mb-4">
+            <h4>Upload Audio Tahrim</h4>
+            <input type="file" id="audio-tahrim" accept="audio/*" class="form-control">
+            <button class="btn btn-warning mt-2" onclick="uploadTahrimAudio()">Upload Tahrim</button>
+        </div>
+
+        <!-- Pengaturan Waktu Tahrim -->
+        <div class="mb-4">
+            <h4>Pengaturan Waktu Tahrim</h4>
+            <input type="number" id="waktu-tahrim" class="form-control" placeholder="Menit sebelum azan (contoh: 6)">
+            <button class="btn btn-info mt-2" onclick="saveWaktuTahrim()">Simpan Waktu Tahrim</button>
+        </div>
+
+        <!-- Upload Audio Murottal -->
+        <div class="mb-4">
+            <h4>Upload Audio Murottal</h4>
+            <input type="file" id="audio-murottal" accept="audio/*" class="form-control">
+            <button class="btn btn-warning mt-2" onclick="uploadMurottalAudio()">Upload Murottal</button>
+        </div>
+
+        <!-- Pengaturan Waktu Murottal -->
+        <div class="mb-4">
+            <h4>Pengaturan Waktu Murottal</h4>
+            <input type="number" id="waktu-murottal" class="form-control" placeholder="Menit sebelum azan (contoh: 10)">
+            <button class="btn btn-info mt-2" onclick="saveWaktuMurottal()">Simpan Waktu Murottal</button>
+        </div>
+    </div>
+
+    <script>
+        // 🔊 Fungsi Upload Audio Murottal
+        function uploadMurottalAudio() {
+            const fileInput = document.getElementById('audio-murottal');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const audioData = e.target.result;
+                    localStorage.setItem('audioMurottal', audioData);
+                    alert('Audio murottal berhasil disimpan!');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Silakan pilih file audio murottal terlebih dahulu.');
+            }
+        }
+
+        // ⏰ Simpan Waktu Murottal
+        function saveWaktuMurottal() {
+            const waktu = parseInt(document.getElementById('waktu-murottal').value);
+            if (!isNaN(waktu) && waktu > 0) {
+                localStorage.setItem('waktuMurottal', waktu);
+                alert('Waktu murottal berhasil disimpan!');
+            } else {
+                alert('Masukkan waktu yang valid sebelum azan.');
+            }
+        }
+
+        // 🔊 Fungsi Upload Audio Tahrim
+        function uploadTahrimAudio() {
+            const fileInput = document.getElementById('audio-tahrim');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const audioData = e.target.result;
+                    localStorage.setItem('audioTahrim', audioData);
+                    alert('Audio tahrim berhasil disimpan!');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Silakan pilih file audio terlebih dahulu.');
+            }
+        }
+
+        // ⏰ Simpan Waktu Tahrim
+        function saveWaktuTahrim() {
+            const waktu = parseInt(document.getElementById('waktu-tahrim').value);
+            if (!isNaN(waktu) && waktu > 0) {
+                localStorage.setItem('waktuTahrim', waktu);
+                alert('Waktu tahrim berhasil disimpan!');
+            } else {
+                alert('Masukkan waktu yang valid sebelum azan.');
+            }
+        }
+
+        // 🕌 Simpan Nama Masjid
+        function saveNamaMasjid() {
+            const namaMasjid = document.getElementById('nama-masjid').value.trim();
+            if (namaMasjid) {
+                localStorage.setItem('namaMasjid', namaMasjid);
+                alert('Nama masjid berhasil disimpan!');
+            } else {
+                alert('Nama masjid tidak boleh kosong.');
+            }
+        }
+
+        // 📍 Atur Lokasi Masjid
+        function setLocationWithGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const location = { latitude, longitude, type: 'gps' };
+                    localStorage.setItem('masjidLocation', JSON.stringify(location));
+                    document.getElementById("location-status").innerText = `Lokasi GPS disimpan: Lat ${latitude}, Long ${longitude}`;
+                    alert('Lokasi GPS berhasil disimpan!');
+                }, (error) => {
+                    alert('Gagal mendapatkan lokasi, pastikan GPS aktif.');
+                });
+            } else {
+                alert('Geolocation tidak didukung oleh browser ini.');
+            }
+        }
+
+        // ✍️ Simpan Lokasi Manual
+        function saveManualLocation() {
+            const lokasi = document.getElementById('manual-lokasi').value.trim();
+            if (lokasi) {
+                const location = { name: lokasi, type: 'manual' };
+                localStorage.setItem('masjidLocation', JSON.stringify(location));
+                document.getElementById("location-status").innerText = `Lokasi manual disimpan: ${lokasi}`;
+                alert('Lokasi manual berhasil disimpan!');
+            } else {
+                alert('Silakan masukkan nama lokasi terlebih dahulu.');
+            }
+        }
+
+        // 💬 Simpan Teks Berjalan
+        function saveTeksBerjalan() {
+            const teks = document.getElementById('teks-berjalan').value.trim();
+            if (teks) {
+                localStorage.setItem('teksBerjalan', teks);
+                alert('Teks berjalan berhasil disimpan!');
+            } else {
+                alert('Teks berjalan tidak boleh kosong.');
+            }
+        }
+
+        // 💰 Simpan Informasi Kas
+        function saveKasMasjid() {
+            const kas = {
+                awal: parseFloat(document.getElementById('kas-awal').value) || 0,
+                masuk: parseFloat(document.getElementById('kas-masuk').value) || 0,
+                keluar: parseFloat(document.getElementById('kas-keluar').value) || 0
+            };
+            localStorage.setItem('kasMasjid', JSON.stringify(kas));
+            alert('Informasi kas berhasil disimpan!');
+        }
+
+        // 🚀 Memuat Data Saat Halaman Dibuka
+        window.onload = function () {
+            loadNamaMasjid();
+            loadSavedLocation();
+        };
+
+        // 🔄 Load Nama Masjid
+        function loadNamaMasjid() {
+            const savedNamaMasjid = localStorage.getItem('namaMasjid');
+            if (savedNamaMasjid) {
+                document.getElementById('nama-masjid').value = savedNamaMasjid;
+            }
+        }
+
+        // 🔄 Load Lokasi Masjid
+        function loadSavedLocation() {
+            const savedLocation = JSON.parse(localStorage.getItem('masjidLocation'));
+            if (savedLocation) {
+                if (savedLocation.type === 'gps') {
+                    document.getElementById('location-status').innerText = `Lokasi GPS: Lat ${savedLocation.latitude}, Long ${savedLocation.longitude}`;
+                } else if (savedLocation.type === 'manual') {
+                    document.getElementById('manual-lokasi').value = savedLocation.name;
+                    document.getElementById('location-status').innerText = `Lokasi manual: ${savedLocation.name}`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
