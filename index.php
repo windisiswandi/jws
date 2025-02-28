@@ -236,7 +236,7 @@
             Object.entries(prayerTimes).forEach(([name, time]) => {
                 const [hours, minutes] = time.split(":");
                 const prayerDate = new Date();
-                prayerDate.setHours(22, 50, 0);
+                prayerDate.setHours(hours, minutes, 0);
 
                 if (prayerDate > now && !nextPrayer) {
                     nextPrayer = name.toUpperCase();
