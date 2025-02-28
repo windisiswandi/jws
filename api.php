@@ -17,7 +17,7 @@ if (isset($_POST['get_data_setting'])) {
 }
 
 if (isset($_POST['namaMasjid'])) {
-    $namaMasjid = $_POST['namaMasjid'];
+    $namaMasjid = htmlspecialchars($_POST['namaMasjid'], ENT_QUOTES, 'UTF-8');
     
     $result = $conn->query("SELECT id FROM setting");
 
@@ -162,7 +162,7 @@ if (isset($_POST['waktu_murottal'])) {
 }
 
 if (isset($_POST['teks_berjalan'])) {
-    $teks_berjalan = $_POST['teks_berjalan'];
+    $teks_berjalan = htmlspecialchars($_POST['teks_berjalan'], ENT_QUOTES, 'UTF-8');
     
     $result = $conn->query("SELECT id FROM setting");
 
@@ -226,7 +226,7 @@ if (isset($_POST['type_lokasi'])) {
             $stmt->execute();
         }
     }else {
-        $city = $_POST['city'];
+        $city = htmlspecialchars($_POST['city'], ENT_QUOTES, 'UTF-8');
         if ($result->num_rows == 0) {
             $stmt = $conn->prepare("INSERT INTO lokasi (city, type) VALUES (?,?)");
             $stmt->bind_param("ss", $city, $type_lokasi);
