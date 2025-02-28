@@ -2,6 +2,7 @@
     include 'koneksi.php';
     $setting = $conn->query("SELECT * FROM setting")->fetch_assoc();
     $text_berjalan = @$setting['text_berjalan'];
+    $play_audio = @$setting['play_audio'];
     $audio_tahrim = @$setting['audio_tahrim'];
     $waktu_tahrim = @$setting['waktu_tahrim'] > 0 ? $setting['waktu_tahrim'] : 5;
     $audio_murottal = @$setting['audio_murottal'];
@@ -11,7 +12,7 @@
     $kas_keluar = @$setting['kas_keluar_masjid'] ? $setting['kas_keluar_masjid'] : 0;
     $total_kas = ($kas_awal + $kas_masuk) - $kas_keluar;
 
-    $lokasi = $conn->query("SELECT * FROM lokasi")->fetch_assoc();
+    $lokasi =  $conn->query("SELECT * FROM lokasi")->fetch_assoc();
     if ($lokasi) {
         $latitude = $lokasi['latitude'];
         $longitude = $lokasi['longitude'];
@@ -31,11 +32,11 @@
     <title>Jadwal Sholat</title>
     <link rel="stylesheet" href="./style/style.css" />
     <!-- UIkit CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.23.1/dist/css/uikit.min.css" />
+    <link rel="stylesheet" href="./assets/uikit/css/uikit.min.css" />
 
     <!-- UIkit JS -->
-    <script src="https://cdn.jsdelivr.net/npm/uikit@3.23.1/dist/js/uikit.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/uikit@3.23.1/dist/js/uikit-icons.min.js"></script>
+    <script src="./assets/uikit/js/uikit.min.js"></script>
+    <script src="./assets/uikit/js/uikit-icons.min.js"></script>
 </head>
 <body class="font-sans h-screen w-full box-border">
     <div class="h-screen w-full overflow-hidden">
@@ -64,16 +65,16 @@
             
             <div class="py-3 flex items-center space-x-2">
                 <img src="./assets/icon-masjid.png" alt="icon masjid">
-                <h1 class="text-2xl 2xl:text-3xl 3xl:text-5xl font-semibold m-0"><?= @$setting['nama_masjid'] ? $setting['nama_masjid'] : "Nama masjid"; ?></h1>
+                <h1 id="nama_masjid" class="text-2xl 2xl:text-3xl 3xl:text-5xl font-semibold m-0"><?= @$setting['nama_masjid'] ? $setting['nama_masjid'] : "Nama masjid"; ?></h1>
             </div>
-            <a href="admin.php" class="bg-blue-500 !no-underline inline-block text-white py-2 px-3 rounded h-full cursor-pointer xl:text-xl 3xl:text-3xl">
+            <!-- <a href="admin.php" class="bg-blue-500 !no-underline inline-block text-white py-2 px-3 rounded h-full cursor-pointer xl:text-xl 3xl:text-3xl">
                 🔧 Pengaturan
-            </a>
+            </a> -->
         </div>
         <div class="mx-auto w-full 3xl:container">
             <div class="text-center bg-slate-800 p-5 text-white">
                 <p id="connection-status">Status Koneksi</p>
-                <p class="text-2xl 3xl:text-5xl"> <span id="ca-masehi">Jumat, 11-10-2024</span> / <span id="ca-hijriyah">8 Rabiul Akhir 1446 H</span> </p>
+                <p class="text-2xl 3xl:text-5xl"> <span id="ca-masehi">-</span> / <span id="ca-hijriyah">-</span> </p>
             </div>
             <div class="grid grid-cols-2 text-center border-t-2 border-slate-600">
                 <div class="bg-slate-800 text-white px-5 py-8 border-r-2 border-slate-600">
@@ -169,7 +170,7 @@
             </div>
             <marquee class="bg-gradient-to-r from-white to-blue-200 text-black font-semibold py-3 text-xl 2xl:text-5xl" id="teks-berjalan-display">
                 <?php if(@$setting['text_berjalan']) : ?>
-                    <?= "🎤 $text_berjalan | 💰 Kas Awal: Rp". number_format($kas_awal, 0, ",", '.') . " | 💰 Kas Masuk: Rp" . number_format($kas_masuk, 0, ",", '.') . " | 💸 Kas Keluar: Rp" . number_format($kas_keluar, 0, ",", '.') . " | 💼 Total Kas: Rp" . number_format($total_kas, 0, ",", '.'); ?>
+                    <?= "🎤 $text_berjalan | 💰 Kas Awal: Rp ". number_format($kas_awal, 0, ",", '.') . " | 💰 Kas Masuk: Rp " . number_format($kas_masuk, 0, ",", '.') . " | 💸 Kas Keluar: Rp " . number_format($kas_keluar, 0, ",", '.') . " | 💼 Total Kas: Rp" . number_format($total_kas, 0, ",", '.'); ?>
                 <?php else: ?>
                     🎤 Menunggu update teks dari Admin Panel...
                 <?php endif; ?>
@@ -182,8 +183,28 @@
     <?php endif; ?>
 
     <script>
+        document.addEventListener('click', function () {
+            document.documentElement.requestFullscreen();
+        })
+
         var audioTahrim = document.getElementById("myAudioTahrim");
         var audioMurottal = document.getElementById("myAudioMurottal");
+
+        let countdownInterval = null;
+        let play_audio = parseInt('<?= $play_audio; ?>');
+        let countPlayTahrim = 0;
+        let countPlayMurottal = 0;
+        let srcAudioTahrim = `<?= $audio_tahrim ?>`;
+        let srcAudioMurottal = `<?= $audio_murottal ?>`;
+        let isOnline = false;
+        let hasReqOffline = false;
+        let hasReqOnline = false;
+        let waktu_tahrim = parseInt('<?= @$waktu_tahrim ?>');
+        let waktu_murottal = parseInt('<?= @$waktu_murottal ?>');
+        let latitude = '<?= @$latitude ?>';
+        let longitude = '<?= @$longitude ?>';
+        let city = '<?= @$city ?>';
+        let type_lokasi = '<?= @$type_lokasi ?>';
 
         function updatePrayerTimes(timings) {
             document.getElementById("imsak").innerText = timings.Imsak;
@@ -196,6 +217,8 @@
         }
 
         function countdownToNextPrayer(timings) {
+            if (countdownInterval) clearInterval(countdownInterval);
+
             const prayerTimes = {
                 Imsak: timings.Imsak,
                 Subuh: timings.Fajr,
@@ -213,7 +236,7 @@
             Object.entries(prayerTimes).forEach(([name, time]) => {
                 const [hours, minutes] = time.split(":");
                 const prayerDate = new Date();
-                prayerDate.setHours(hours, minutes, 0);
+                prayerDate.setHours(22, 50, 0);
 
                 if (prayerDate > now && !nextPrayer) {
                     nextPrayer = name.toUpperCase();
@@ -224,13 +247,11 @@
             if (nextPrayer) {
                 document.getElementById("next-prayer").innerText = nextPrayer;
 
-                const interval = setInterval(() => {
+                countdownInterval = setInterval(() => {
                     const now = new Date();
                     const diff = nextPrayerTime - now;
 
-                    if(diff <= 0) {
-                        window.location.reload();
-                    }else {
+                    if(diff > 0) {
                         const hours = Math.floor(diff / 3600000);
                         const minutes = Math.floor((diff % 3600000) / 60000);
                         const seconds = Math.floor((diff % 60000) / 1000);
@@ -238,40 +259,28 @@
                         document.querySelector("#countdown #hours").innerText = hours < 10 ? `0${hours}` : hours;
                         document.querySelector("#countdown #minutes").innerText = minutes < 10 ? `0${minutes}` : minutes;
                         document.querySelector("#countdown #seconds").innerText = seconds < 10 ? `0${seconds}` : seconds;
-                    }
-
-                    if (Math.floor(diff/60000) == parseInt("<?= $waktu_tahrim ?>")) {
-                        audioTahrim.play();
-                        audioMurottal.pause();
-                    }
-
-                    if (Math.floor(diff/60000) == parseInt("<?= $waktu_murottal ?>")) {
-                        audioTahrim.pause();
-                        audioMurottal.play();
-                    }
-
-                }, 1000);
-            }else {
-                document.getElementById("next-prayer").innerText = "Imsak";
-                const interval = setInterval(() => {
-                    const now = new Date();
-                    const nextPrayerTime = new Date();
-                    nextPrayerTime.setDate(nextPrayerTime.getDate() + 1);
-                    const [hours, minutes] = prayerTimes.Imsak.split(":");
-                    nextPrayerTime.setHours(hours, minutes, 0);
-
-                    const diff = nextPrayerTime - now;
-
-                    if(diff <= 0) {
-                        window.location.reload();
                     }else {
-                        const hours = Math.floor(diff / 3600000);
-                        const minutes = Math.floor((diff % 3600000) / 60000);
-                        const seconds = Math.floor((diff % 60000) / 1000);
+                        clearInterval(countdownInterval);
+                    }
+
+                    if (play_audio) {
+                        if (Math.floor(diff/60000) == waktu_tahrim && countPlayTahrim == 0) {
+                            countPlayTahrim = 1;
+                            audioTahrim.pause();
+                            audioTahrim.src = `./assets/audio/${srcAudioTahrim}`;
+                            audioTahrim.load();
+                            audioTahrim.play();
+                            audioMurottal.pause();
+                        }
     
-                        document.querySelector("#countdown #hours").innerText = hours < 10 ? `0${hours}` : hours;
-                        document.querySelector("#countdown #minutes").innerText = minutes < 10 ? `0${minutes}` : minutes;
-                        document.querySelector("#countdown #seconds").innerText = seconds < 10 ? `0${seconds}` : seconds;
+                        if (Math.floor(diff/60000) == waktu_murottal && countPlayMurottal == 0) {
+                            countPlayMurottal = 1;
+                            audioTahrim.pause();
+                            audioMurottal.pause();
+                            audioMurottal.src = `./assets/audio/${srcAudioMurottal}`;
+                            audioMurottal.load();
+                            audioMurottal.play();
+                        }
                     }
 
                 }, 1000);
@@ -280,13 +289,23 @@
         
         function fetchPrayerTimes() {
 
-            let apiUrl = '';
+            // if (countdownInterval) {
+            //     clearInterval(countdownInterval); // Bersihkan interval sebelum mengambil waktu sholat baru
+            // }
 
-            <?php if($type_lokasi == 'gps') : ?>
-                apiUrl = `https://api.aladhan.com/v1/timings?latitude=<?= $latitude ?>&longitude=<?= $longitude ?>&method=2`;
-            <?php else: ?>
-                apiUrl = `https://api.aladhan.com/v1/timingsByCity?city=<?= $city ?>&country=indonesia&method=2`;
-            <?php endif; ?>
+            let apiUrl = '';
+            if (type_lokasi == 'gps') apiUrl = `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`;
+            else apiUrl = `https://api.aladhan.com/v1/timingsByCity?city=${city}&country=indonesia&method=2`;
+
+            if (!isOnline) {
+                let prayerTime = localStorage.getItem("prayerTime");
+                if (prayerTime) {
+                    let time = JSON.parse(prayerTime);
+                    updatePrayerTimes(time);
+                    countdownToNextPrayer(time);
+                    showConnectionStatus(false);
+                }
+            }
 
             fetch(apiUrl)
                 .then(response => response.json())
@@ -301,45 +320,125 @@
                     });
 
                     const hijridata = data.data.date.hijri;
-                    updatePrayerTimes(timings);
-                    showConnectionStatus(true);
                     document.getElementById("ca-masehi").innerText = `${formattedDate}`;
                     document.getElementById("ca-hijriyah").innerText = `${hijridata.day} ${hijridata.month.en} ${hijridata.year} H`;
+                    localStorage.setItem('prayerTime', JSON.stringify(timings));
+                    updatePrayerTimes(timings);
+                    showConnectionStatus(true);
                     countdownToNextPrayer(timings);
                 })
                 .catch(error => {
                     console.error("Error fetching prayer times:", error);
+                    // hasReqOnline = false;
                     showConnectionStatus(false);
                 });
             
         }
 
-
-
-        function showConnectionStatus(isOnline) {
+        function showConnectionStatus(online) {
             const statusElement = document.getElementById("connection-status");
-            if (isOnline) {
+            if (online) {
+                isOnline = true;
                 statusElement.innerText = "🟢 Koneksi Internet Aktif";
-                statusElement.className = "text-green-500 font-semibold";
+                statusElement.className = "text-green-800 text-lg font-semibold inline-block bg-green-100 py-1 px-3 rounded-md mb-3";
             } else {
+                isOnline = false;
                 statusElement.innerText = "🔴 Koneksi Terputus (Mode Offline)";
-                statusElement.className = "text-red-500 font-semibold";
+                statusElement.className = "text-red-800 text-lg font-semibold inline-block bg-red-100 py-1 px-3 rounded-md mb-3";
             }
         }
 
         function currenTime() {
 
             const now = new Date();
+            const formattedDate = now.toLocaleDateString("id-ID", { 
+                weekday: "long", 
+                day: "numeric", 
+                month: "short", 
+                year: "numeric"
+            });
+            
             const h = now.getHours() < 10 ? `0${now.getHours()}` : now.getHours();
             const m = now.getMinutes() < 10 ? `0${now.getMinutes()}` : now.getMinutes();
             const s = now.getSeconds() < 10 ? `0${now.getSeconds()}` : now.getSeconds();
     
+            document.getElementById("ca-masehi").innerText = `${formattedDate}`;
             document.querySelector("#current-time #hours").innerText = h;
             document.querySelector("#current-time #minutes").innerText = m;
             document.querySelector("#current-time #seconds").innerText = s;
         }
         setInterval(currenTime, 1000);
+        // setInterval(fetchPrayerTimes, 1000);
 
+        setInterval(() => {
+            const formData = new URLSearchParams();
+            formData.append("get_data_setting", true);
+            fetch('api.php', {
+                method: 'POST',
+                body: formData, // Jangan set 'Content-Type', browser akan menentukannya sendiri
+            })
+            .then(response => response.json())
+            .then(result => {
+                const { data, lokasi } = result
+                const kas_awal = parseInt(data.kas_awal_masjid);
+                const kas_masuk = parseInt(data.kas_masuk_masjid);
+                const kas_keluar = parseInt(data.kas_keluar_masjid);
+                let teks_berjalan = `🎤 ${data.text_berjalan} | 💰 Kas Awal: ${formatRupiah(kas_awal)} | 💰 Kas Masuk: ${formatRupiah(kas_masuk)} | 💸 Kas Keluar: ${formatRupiah(kas_keluar)} | 💼 Total Kas: ${formatRupiah(kas_awal + kas_masuk - kas_keluar)}`;
+
+                
+                play_audio = parseInt(data.play_audio);
+                waktu_murottal = parseInt(data.waktu_murottal);
+                latitude = lokasi.latitude;
+                longitude = lokasi.longitude;
+                city = lokasi.city;
+                type_lokasi = lokasi.type;
+
+                if (!play_audio) {
+                    audioTahrim.pause();
+                    audioMurottal.pause();
+                    countPlayTahrim = 0;
+                    countPlayMurottal = 0;
+                }
+
+                if (srcAudioTahrim != data.audio_tahrim) {
+                    srcAudioTahrim = data.audio_tahrim;
+                    countPlayTahrim = 0;
+                }
+
+                if (srcAudioMurottal != data.audio_murottal) {
+                    waktu_murottal = parseInt(data.waktu_murottal);
+                    srcAudioMurottal = data.audio_murottal;
+                    countPlayMurottal = 0;
+                }
+
+                if (waktu_tahrim != parseInt(data.waktu_tahrim)) {
+                    waktu_tahrim = parseInt(data.waktu_tahrim);
+                    countPlayTahrim = 0;
+                }
+
+                if (waktu_murottal != parseInt(data.waktu_murottal)) {
+                    waktu_murottal = parseInt(data.waktu_murottal);
+                    countPlayMurottal= 0;
+                }
+
+                fetchPrayerTimes();
+
+                document.getElementById("nama_masjid").innerText = `${data.nama_masjid}`;
+                document.getElementById("teks-berjalan-display").innerText = `${teks_berjalan}`;
+            })
+            .catch(error => {
+                console.error('Terjadi kesalahan:', error);
+                alert('Terjadi kesalahan: ' + error.message);
+            });
+        }, 10000);
+
+        function formatRupiah(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0, // Tidak menggunakan desimal
+            }).format(amount);
+        }
 
         currenTime();
         fetchPrayerTimes();

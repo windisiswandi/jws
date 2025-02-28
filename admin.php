@@ -1,6 +1,7 @@
 <?php
     include 'koneksi.php';
     $setting = $conn->query("SELECT * FROM setting")->fetch_assoc();
+    $play_audio = @$setting['play_audio'];
     $kas_awal = @$setting['kas_awal_masjid'] ? $setting['kas_awal_masjid'] : 0;
     $kas_masuk = @$setting['kas_masuk_masjid'] ? $setting['kas_masuk_masjid'] : 0;
     $kas_keluar = @$setting['kas_keluar_masjid'] ? $setting['kas_keluar_masjid'] : 0;
@@ -77,6 +78,20 @@
         </div>
 
         <!-- Upload Audio Tahrim -->
+        <div class="mb-6 border-t border-slate-400 pt-4">
+            <div class="flex items-center justify-between space-x-4 border shadow rounded-md py-3 px-4">
+                <div class="">
+                    <p class=" font-medium uppercase">Menggunakan Audio</p>
+                    <p class="text-[12px] ">Status : <?= $play_audio ? "ON":"OFF"; ?></p>
+                </div>
+                <?php if($play_audio) : ?>
+                    <button class="bg-red-100 text-red-800 font-bold text-sm px-3 py-1 rounded shadow" onclick="savePlayAudio('disable')">Disable</button>
+                <?php else: ?>
+                    <button class="bg-green-100 text-green-800 font-bold text-sm px-3 py-1 rounded shadow" onclick="savePlayAudio('enable')">Enable</button>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <div class="mb-6">
             <h4 class="font-semibold mb-2">Upload Audio Tahrim</h4>
             <input type="file" id="audio-tahrim" accept="audio/*" class="w-full p-2 border rounded">
@@ -159,6 +174,28 @@
             } else {
                 alert('Masukkan waktu yang valid sebelum azan.');
             }
+        }
+
+        function savePlayAudio(state) {
+            const formData = new URLSearchParams();
+            formData.append("play_audio", state);
+
+            fetch('api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString(), // Kirim dalam format URL-encoded
+            })
+            .then(response => response.json())
+            .then(data => {
+                window.location.reload();
+                // console.log(data)
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Terjadi kesalahan: ' + error.message);
+            });
         }
 
         // 🔊 Fungsi Upload Audio Tahrim

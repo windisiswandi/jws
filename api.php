@@ -2,6 +2,20 @@
 header("Content-Type: application/json");
 include 'koneksi.php';
 
+if (isset($_POST['get_data_setting'])) {
+    $result = $conn->query("SELECT * FROM setting");
+    $lokasi = $conn->query("SELECT * FROM lokasi");
+
+    if ($result->num_rows > 0) {
+        echo json_encode([
+            "status" => "success",
+            "data" => $result->fetch_assoc(),
+            "lokasi" => $lokasi->fetch_assoc(),
+        ]);
+    } 
+
+}
+
 if (isset($_POST['namaMasjid'])) {
     $namaMasjid = $_POST['namaMasjid'];
     
@@ -76,6 +90,29 @@ if (isset($_FILES['file'])) {
             "message" => "Gagal menyimpan file."
         ]);
     }
+}
+
+if (isset($_POST['play_audio'])) {
+    $play_audio = $_POST['play_audio'] == "enable" ? true : false;
+    
+    $result = $conn->query("SELECT id FROM setting");
+
+    if ($result->num_rows == 0) {
+        $stmt = $conn->prepare("INSERT INTO setting (play_audio) VALUES (?)");
+        $stmt->bind_param("i", $play_audio);
+        $stmt->execute();
+    } else {
+        $stmt = $conn->prepare("UPDATE setting SET play_audio = ? LIMIT 1");
+        $stmt->bind_param("i", $play_audio);
+        $stmt->execute();
+    }
+
+    $stmt->close();
+
+    echo json_encode([
+        "status" => "success",
+        "message" => "Audio berhasil diaktifkan"
+    ]);
 }
 
 if (isset($_POST['waktu_tahrim'])) {
