@@ -2,6 +2,10 @@
     include 'koneksi.php';
     $setting = $conn->query("SELECT * FROM setting")->fetch_assoc();
     $text_berjalan = @$setting['text_berjalan'];
+    $audio_tahrim = @$setting['audio_tahrim'];
+    $waktu_tahrim = @$setting['waktu_tahrim'] > 0 ? $setting['waktu_tahrim'] : 5;
+    $audio_murottal = @$setting['audio_murottal'];
+    $waktu_murottal = @$setting['waktu_murottal'] > 0 ? $setting['waktu_murottal'] : 6;
     $kas_awal = @$setting['kas_awal_masjid'] ? $setting['kas_awal_masjid'] : 0;
     $kas_masuk = @$setting['kas_masuk_masjid'] ? $setting['kas_masuk_masjid'] : 0;
     $kas_keluar = @$setting['kas_keluar_masjid'] ? $setting['kas_keluar_masjid'] : 0;
@@ -121,7 +125,18 @@
                 Sesungguhnya orang yang bodoh di antara kami selalu mengucapkan (perkataan) yang melampaui batas terhadap Allah. [QS. 72:4]
             </p>
         </div> -->
+        <audio id="myAudioTahrim" class="invisible absolute">
+           <source src="assets/audio/<?= $audio_tahrim ?>" type="audio/mpeg">
+           Your browser does not support the audio element.
+       </audio>
+
+        <audio id="myAudioMurottal" class="invisible absolute">
+           <source src="assets/audio/<?= $audio_murottal ?>" type="audio/mpeg">
+           Your browser does not support the audio element.
+       </audio>
+
         <div class="lg:absolute left-0 bottom-0 w-full">
+
             <div class="grid grid-cols tablet:grid-cols-3 lg:grid-cols-7 text-center">
                 <div class='bg-pink-500 text-center py-5 text-white uppercase xl:bg-opacity-85'>
                     <p class='font-bold text-xl xl:text-3xl 3xl:text-[58px]'>IMSAK</p>
@@ -167,6 +182,8 @@
     <?php endif; ?>
 
     <script>
+        var audioTahrim = document.getElementById("myAudioTahrim");
+        var audioMurottal = document.getElementById("myAudioMurottal");
 
         function updatePrayerTimes(timings) {
             document.getElementById("imsak").innerText = timings.Imsak;
@@ -206,16 +223,57 @@
 
             if (nextPrayer) {
                 document.getElementById("next-prayer").innerText = nextPrayer;
-                setInterval(() => {
+
+                const interval = setInterval(() => {
                     const now = new Date();
                     const diff = nextPrayerTime - now;
-                    const hours = Math.floor(diff / 3600000);
-                    const minutes = Math.floor((diff % 3600000) / 60000);
-                    const seconds = Math.floor((diff % 60000) / 1000);
 
-                    document.querySelector("#countdown #hours").innerText = hours < 10 ? `0${hours}` : hours;
-                    document.querySelector("#countdown #minutes").innerText = minutes < 10 ? `0${minutes}` : minutes;
-                    document.querySelector("#countdown #seconds").innerText = seconds < 10 ? `0${seconds}` : seconds;
+                    if(diff <= 0) {
+                        window.location.reload();
+                    }else {
+                        const hours = Math.floor(diff / 3600000);
+                        const minutes = Math.floor((diff % 3600000) / 60000);
+                        const seconds = Math.floor((diff % 60000) / 1000);
+    
+                        document.querySelector("#countdown #hours").innerText = hours < 10 ? `0${hours}` : hours;
+                        document.querySelector("#countdown #minutes").innerText = minutes < 10 ? `0${minutes}` : minutes;
+                        document.querySelector("#countdown #seconds").innerText = seconds < 10 ? `0${seconds}` : seconds;
+                    }
+
+                    if (Math.floor(diff/60000) == parseInt("<?= $waktu_tahrim ?>")) {
+                        audioTahrim.play();
+                        audioMurottal.pause();
+                    }
+
+                    if (Math.floor(diff/60000) == parseInt("<?= $waktu_murottal ?>")) {
+                        audioTahrim.pause();
+                        audioMurottal.play();
+                    }
+
+                }, 1000);
+            }else {
+                document.getElementById("next-prayer").innerText = "Imsak";
+                const interval = setInterval(() => {
+                    const now = new Date();
+                    const nextPrayerTime = new Date();
+                    nextPrayerTime.setDate(nextPrayerTime.getDate() + 1);
+                    const [hours, minutes] = prayerTimes.Imsak.split(":");
+                    nextPrayerTime.setHours(hours, minutes, 0);
+
+                    const diff = nextPrayerTime - now;
+
+                    if(diff <= 0) {
+                        window.location.reload();
+                    }else {
+                        const hours = Math.floor(diff / 3600000);
+                        const minutes = Math.floor((diff % 3600000) / 60000);
+                        const seconds = Math.floor((diff % 60000) / 1000);
+    
+                        document.querySelector("#countdown #hours").innerText = hours < 10 ? `0${hours}` : hours;
+                        document.querySelector("#countdown #minutes").innerText = minutes < 10 ? `0${minutes}` : minutes;
+                        document.querySelector("#countdown #seconds").innerText = seconds < 10 ? `0${seconds}` : seconds;
+                    }
+
                 }, 1000);
             }
         }

@@ -25,6 +25,59 @@ if (isset($_POST['namaMasjid'])) {
     ]);
 }
 
+if (isset($_FILES['file'])) {
+    $uploadDir = "./assets/audio/";
+    $type = $_POST['type'];
+    // $maxFileSize = 2 * 1024 * 1024;
+    $file = $_FILES['file'];
+
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true); // Buat folder jika belum ada
+    }
+
+    // if ($file['size'] > $maxFileSize) {
+    //     echo json_encode([
+    //         "status" => "error",
+    //         "message" => "Ukuran file terlalu besar! Maksimal 2MB."
+    //     ]);
+    //     exit;
+    // }
+
+
+    $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $fileName = $type ."-". time().".".$fileExtension;
+    $targetFile = $uploadDir . $fileName;
+
+    if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+        $result = $conn->query("SELECT id FROM setting");
+
+        if ($result->num_rows == 0) {
+            if ($type == 'tahrim') $stmt = $conn->prepare("INSERT INTO setting (audio_tahrim) VALUES (?)");
+            else $stmt = $conn->prepare("INSERT INTO setting (audio_murottal) VALUES (?)");
+            $stmt->bind_param("s", $fileName);
+            $stmt->execute();
+        } else {
+            if ($type == 'tahrim') $stmt = $conn->prepare("UPDATE setting SET audio_tahrim = ? LIMIT 1");
+            else $stmt = $conn->prepare("UPDATE setting SET audio_murottal = ? LIMIT 1");
+            
+            $stmt->bind_param("s", $fileName);
+            $stmt->execute();
+        }
+
+        $stmt->close();
+
+        echo json_encode([
+            "status" => "success",
+            "message" => "File berhasil disimpan!"
+        ]);
+    }else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Gagal menyimpan file."
+        ]);
+    }
+}
+
 if (isset($_POST['waktu_tahrim'])) {
     $waktu_tahrim = $_POST['waktu_tahrim'];
     

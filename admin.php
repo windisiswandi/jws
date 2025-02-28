@@ -86,7 +86,7 @@
         <!-- Pengaturan Waktu Tahrim -->
         <div class="mb-6">
             <h4 class="font-semibold mb-2">Pengaturan Waktu Tahrim</h4>
-            <input type="number" id="waktu-tahrim" class="w-full p-2 border rounded" placeholder="Menit sebelum azan (contoh: 6)" value="<?= @$setting['waktu_tahrim'] ?>">
+            <input type="number" id="waktu-tahrim" class="w-full p-2 border rounded" placeholder="Menit sebelum azan (contoh: 6)" value="<?= @$setting['waktu_tahrim'] > 0 ? $setting['waktu_tahrim'] : '' ?>">
             <button class="mt-2 w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700" onclick="saveWaktuTahrim()">Simpan Waktu Tahrim</button>
         </div>
 
@@ -100,7 +100,7 @@
         <!-- Pengaturan Waktu Murottal -->
         <div class="mb-6">
             <h4 class="font-semibold mb-2">Pengaturan Waktu Murottal</h4>
-            <input type="number" id="waktu-murottal" class="w-full p-2 border rounded" placeholder="Menit sebelum azan (contoh: 10)" value="<?= @$setting['waktu_murottal'] ?>">
+            <input type="number" id="waktu-murottal" class="w-full p-2 border rounded" placeholder="Menit sebelum azan (contoh: 10)" value="<?= @$setting['waktu_murottal'] > 0 ? $setting['waktu_murottal'] : '' ?>">
             <button class="mt-2 w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700" onclick="saveWaktuMurottal()">Simpan Waktu Murottal</button>
         </div>
     </div>
@@ -111,13 +111,23 @@
             const fileInput = document.getElementById('audio-murottal');
             const file = fileInput.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const audioData = e.target.result;
-                    localStorage.setItem('audioMurottal', audioData);
-                    alert('Audio murottal berhasil disimpan!');
-                };
-                reader.readAsDataURL(file);
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("type", "murottal");
+
+                fetch('api.php', {
+                    method: 'POST',
+                    body: formData, // Jangan set 'Content-Type', browser akan menentukannya sendiri
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error('Terjadi kesalahan:', error);
+                    alert('Terjadi kesalahan: ' + error.message);
+                });
             } else {
                 alert('Silakan pilih file audio murottal terlebih dahulu.');
             }
@@ -156,13 +166,23 @@
             const fileInput = document.getElementById('audio-tahrim');
             const file = fileInput.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const audioData = e.target.result;
-                    localStorage.setItem('audioTahrim', audioData);
-                    alert('Audio tahrim berhasil disimpan!');
-                };
-                reader.readAsDataURL(file);
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("type", "tahrim");
+
+                fetch('api.php', {
+                    method: 'POST',
+                    body: formData, // Jangan set 'Content-Type', browser akan menentukannya sendiri
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error('Terjadi kesalahan:', error);
+                    alert('Terjadi kesalahan: ' + error.message);
+                });
             } else {
                 alert('Silakan pilih file audio terlebih dahulu.');
             }
