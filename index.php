@@ -16,6 +16,7 @@
     if ($lokasi) {
         $latitude = $lokasi['latitude'];
         $longitude = $lokasi['longitude'];
+        $id_city = $lokasi['id_city'];
         $city = $lokasi['city'];
         $type_lokasi = $lokasi['type'];
     }
@@ -203,30 +204,31 @@
         let waktu_murottal = parseInt('<?= @$waktu_murottal ?>');
         let latitude = '<?= @$latitude ?>';
         let longitude = '<?= @$longitude ?>';
+        let id_city = '<?= @$id_city ?>';
         let city = '<?= @$city ?>';
         let type_lokasi = '<?= @$type_lokasi ?>';
 
         function updatePrayerTimes(timings) {
-            document.getElementById("imsak").innerText = timings.Imsak;
-            document.getElementById("subuh").innerText = timings.Fajr;
-            document.getElementById("syuruq").innerText = timings.Sunrise;
-            document.getElementById("dzuhur").innerText = timings.Dhuhr;
-            document.getElementById("ashar").innerText = timings.Asr;
-            document.getElementById("maghrib").innerText = timings.Maghrib;
-            document.getElementById("isya").innerText = timings.Isha;
+            document.getElementById("imsak").innerText = timings.imsak;
+            document.getElementById("subuh").innerText = timings.subuh;
+            document.getElementById("syuruq").innerText = timings.dhuha;
+            document.getElementById("dzuhur").innerText = timings.dzuhur;
+            document.getElementById("ashar").innerText = timings.ashar;
+            document.getElementById("maghrib").innerText = timings.maghrib;
+            document.getElementById("isya").innerText = timings.isya;
         }
 
         function countdownToNextPrayer(timings) {
             if (countdownInterval) clearInterval(countdownInterval);
 
             const prayerTimes = {
-                Imsak: timings.Imsak,
-                Subuh: timings.Fajr,
-                Syuruq: timings.Sunrise,
-                Dzuhur: timings.Dhuhr,
-                Ashar: timings.Asr,
-                Maghrib: timings.Maghrib,
-                Isya: timings.Isha
+                Imsak: timings.imsak,
+                Subuh: timings.subuh,
+                Syuruq: timings.dhuha,
+                Dzuhur: timings.dzuhur,
+                Ashar: timings.ashar,
+                Maghrib: timings.maghrib,
+                Isya: timings.isya
             };
 
             const now = new Date();
@@ -295,7 +297,7 @@
 
             let apiUrl = '';
             if (type_lokasi == 'gps') apiUrl = `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`;
-            else apiUrl = `https://api.aladhan.com/v1/timingsByCity?city=${city}&country=indonesia&method=2`;
+            else apiUrl = `https://api.myquran.com/v2/sholat/jadwal/${id_city}/${new Date().getFullYear()}/${new Date().getMonth()+1}/${new Date().getDate()}`;
 
             if (!isOnline) {
                 let prayerTime = localStorage.getItem("prayerTime");
@@ -310,19 +312,9 @@
             fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
-                    const timings = data.data.timings;
-                    const masehidata = new Date(data.data.date.timestamp*1000);
-                    const formattedDate = masehidata.toLocaleDateString("id-ID", { 
-                        weekday: "long", 
-                        day: "numeric", 
-                        month: "short", 
-                        year: "numeric"
-                    });
+                    const timings = data.data.jadwal;
 
-                    const hijridata = data.data.date.hijri;
-                    document.getElementById("ca-masehi").innerText = `${formattedDate}`;
-                    document.getElementById("ca-hijriyah").innerText = `${hijridata.day} ${hijridata.month.en} ${hijridata.year} H`;
-                    localStorage.setItem('prayerTime', JSON.stringify(timings));
+                    localStorage.setItem("prayerTime", JSON.stringify(timings));
                     updatePrayerTimes(timings);
                     showConnectionStatus(true);
                     countdownToNextPrayer(timings);
@@ -349,7 +341,6 @@
         }
 
         function currenTime() {
-
             const now = new Date();
             const formattedDate = now.toLocaleDateString("id-ID", { 
                 weekday: "long", 
@@ -367,6 +358,19 @@
             document.querySelector("#current-time #minutes").innerText = m;
             document.querySelector("#current-time #seconds").innerText = s;
         }
+
+        function currenTimeHijri() {
+            fetch('https://api.myquran.com/v2/cal/hijr/?adj=-1')
+                .then(response => response.json())
+                .then(data => {
+                    const [day, hijrdate, masehidate] = data.data.date;
+                    document.getElementById("ca-hijriyah").innerText = hijrdate;
+                })
+                .catch(error => {
+                    console.error("Error fetching hijri date:", error);
+                });
+        }
+
         setInterval(currenTime, 1000);
         // setInterval(fetchPrayerTimes, 1000);
 
@@ -390,6 +394,7 @@
                 waktu_murottal = parseInt(data.waktu_murottal);
                 latitude = lokasi.latitude;
                 longitude = lokasi.longitude;
+                id_city = lokasi.id_city;
                 city = lokasi.city;
                 type_lokasi = lokasi.type;
 
@@ -441,6 +446,7 @@
         }
 
         currenTime();
+        currenTimeHijri();
         fetchPrayerTimes();
     </script>
 </body>

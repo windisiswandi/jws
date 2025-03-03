@@ -226,14 +226,15 @@ if (isset($_POST['type_lokasi'])) {
             $stmt->execute();
         }
     }else {
+        $id_city = htmlspecialchars($_POST['id_city'], ENT_QUOTES, 'UTF-8');
         $city = htmlspecialchars($_POST['city'], ENT_QUOTES, 'UTF-8');
         if ($result->num_rows == 0) {
-            $stmt = $conn->prepare("INSERT INTO lokasi (city, type) VALUES (?,?)");
-            $stmt->bind_param("ss", $city, $type_lokasi);
+            $stmt = $conn->prepare("INSERT INTO lokasi (id_city, city, type) VALUES (?,?,?)");
+            $stmt->bind_param("sss", $id_city, $city, $type_lokasi);
             $stmt->execute();
         } else {
-            $stmt = $conn->prepare("UPDATE lokasi SET city=?,type=?,latitude=null,longitude=null LIMIT 1");
-            $stmt->bind_param("ss", $city, $type_lokasi);
+            $stmt = $conn->prepare("UPDATE lokasi SET id_city=?,city=?,type=?,latitude=null,longitude=null LIMIT 1");
+            $stmt->bind_param("sss", $id_city, $city, $type_lokasi);
             $stmt->execute();
         }
     }

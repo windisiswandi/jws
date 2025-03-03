@@ -11,6 +11,7 @@
     if ($lokasi) {
         $latitude = $lokasi['latitude'];
         $longitude = $lokasi['longitude'];
+        $id_city = $lokasi['id_city'];
         $city = $lokasi['city'];
         $type_lokasi = $lokasi['type'];
     }
@@ -47,8 +48,12 @@
         <!-- Atur Lokasi Masjid -->
         <div class="mb-6">
             <h4 class="font-semibold mb-2">Atur Lokasi Masjid</h4>
-            <button class="w-full bg-blue-500 text-white p-2 rounded mb-2 hover:bg-blue-700" onclick="setLocationWithGPS()">📍 Gunakan Lokasi GPS</button>
-            <input type="text" id="manual-lokasi" class="w-full p-2 border rounded" placeholder="Atau masukkan nama lokasi secara manual" value="<?= @$city; ?>">
+            <!-- <button class="w-full bg-blue-500 text-white p-2 rounded mb-2 hover:bg-blue-700" onclick="setLocationWithGPS()">📍 Gunakan Lokasi GPS</button> -->
+            <div class="relative">
+                <input type="hidden" id="id_lokasi" value="<?= @$id_city; ?>">
+                <input type="text" id="manual-lokasi" class="w-full p-2 border rounded" placeholder="Atau masukkan nama lokasi secara manual" value="<?= @$city; ?>">
+                <div id="city_data" class="absolute w-full bg-white border shadow-xl rounded mt-1"></div>
+            </div>
             <button class="mt-2 w-full bg-green-500 text-white p-2 rounded hover:bg-green-700" onclick="saveManualLocation()">Simpan Lokasi Manual</button>
             <p id="location-status" class="text-gray-700 mt-2">
                 <?php if(@$type_lokasi == "gps") : ?>
@@ -323,8 +328,11 @@
         // ✍️ Simpan Lokasi Manual
         function saveManualLocation() {
             const lokasi = document.getElementById('manual-lokasi').value.trim();
-            if (lokasi) {
+            const id_lokasi = document.getElementById('id_lokasi').value.trim();
+
+            if (lokasi && id_lokasi) {
                 const formData = new URLSearchParams();
+                    formData.append("id_city", id_lokasi);
                     formData.append("city", lokasi);
                     formData.append("type_lokasi", 'manual');
 
@@ -333,7 +341,7 @@
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: formData.toString(), // Kirim dalam format URL-encoded
+                        body: formData.toString(),
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -348,6 +356,38 @@
                 alert('Silakan masukkan nama lokasi terlebih dahulu.');
             }
         }
+
+        document.getElementById('manual-lokasi').addEventListener('input', function () {
+            let query = this.value;
+            let resultBox = document.getElementById('city_data');
+        
+            if (query.length == 0 || query == null || query == '') {
+                resultBox.innerHTML = '';
+                return;
+            }
+
+            fetch(`https://api.myquran.com/v2/sholat/kota/cari/${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status) {
+                        resultBox.innerHTML = '';
+    
+                        data.data.forEach(location => {
+                            let div = document.createElement('div');
+                            let lokasi_name = location.lokasi.replace(new RegExp(query, "gi"), match => `<strong>${match}</strong>`);
+                            div.classList.add('item-lokasi');
+                            div.innerHTML = lokasi_name;
+                            div.onclick = function () {
+                                document.getElementById('manual-lokasi').value = location.lokasi;
+                                document.getElementById('id_lokasi').value = location.id;
+                                resultBox.innerHTML = '';
+                            };
+                            resultBox.appendChild(div);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
 
         // 💬 Simpan Teks Berjalan
         function saveTeksBerjalan() {
